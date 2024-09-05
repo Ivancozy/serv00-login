@@ -6,10 +6,17 @@ import aiofiles
 import random
 import requests
 import os
+import asyncssh  # Import asyncssh for SSH operations
 
 # 从环境变量中获取 Telegram Bot Token 和 Chat ID
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+
+# 从环境变量中获取 SSH 相关信息
+SSH_HOST = os.getenv('SSH_HOST')
+SSH_PORT = int(os.getenv('SSH_PORT', '22'))
+SSH_USERNAME = os.getenv('SSH_USERNAME')
+SSH_PASSWORD = os.getenv('SSH_PASSWORD')
 
 def format_to_iso(date):
     return date.strftime('%Y-%m-%d %H:%M:%S')
@@ -66,6 +73,16 @@ async def login(username, password, panel):
         if page:
             await page.close()
 
+async def run_ssh_command():
+    try:
+        async with asyncssh.connect(SSH_HOST, port=SSH_PORT, username=SSH_USERNAME, password=SSH_PASSWORD) as conn:
+            result = await conn.run('screen -dmS alist_server ./alist server', check=True)
+            print(f'Successfully ran command on server: {result.stdout}')
+            return True
+    except Exception as e:
+        print(f"Failed to run SSH command: {e}")
+        return False
+
 async def main():
     global message
     message = 'serv00&ct8自动化脚本运行\n'
@@ -99,6 +116,12 @@ async def main():
         delay = random.randint(1000, 8000)
         await delay_time(delay)
         
+    # Run the SSH command after all logins are processed
+    if await run_ssh_command():
+        message += '成功在服务器上运行 screen ./alist server 命令。\n'
+    else:
+        message += '在服务器上运行 screen ./alist server 命令失败。\n'
+    
     message += f'所有{serviceName}账号登录完成！'
     await send_telegram_message(message)
     print(f'所有{serviceName}账号登录完成！')
@@ -131,3 +154,4 @@ async def send_telegram_message(message):
 
 if __name__ == '__main__':
     asyncio.run(main())
+
