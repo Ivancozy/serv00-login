@@ -76,7 +76,7 @@ async def login(username, password, panel):
 async def run_ssh_command():
     try:
         async with asyncssh.connect(SSH_HOST, port=SSH_PORT, username=SSH_USERNAME, password=SSH_PASSWORD) as conn:
-            result = await conn.run('screen -dmS alist_server ./alist server', check=True)
+            result = await conn.run('screen -dmS alist_server ~/domains/alist.mefy.site/alist server', check=True)
             print(f'Successfully ran command on server: {result.stdout}')
             return True
     except Exception as e:
